@@ -1,34 +1,13 @@
 import pandas as pd
-import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import classification_report, accuracy_score, precision_score, recall_score
+from sklearn.metrics import classification_report, accuracy_score, precision_score, recall_score, f1_score
 import joblib
 
 # Load dataset
 print("Loading dataset...")
 df = pd.read_csv("dataset_final.csv")
-
-# Step 1: Hitung Rata-rata Tertimbang (Weighting)
-print("Recalculating weighted average (RATA2)...")
-df['RATA2'] = (
-    df['PU'] * 1.0 +
-    df['PPU'] * 1.0 +
-    df['PBM'] * 1.0 +
-    df['PK'] * 1.2 +
-    df['LBI'] * 0.9 +
-    df['LBI2'] * 0.9 +
-    df['PM'] * 1.3
-) / 7.3
-
-# Step 2: Buat Ulang Label berdasarkan threshold 620
-print("Re-labeling STATUS...")
-df['STATUS'] = df['RATA2'].apply(
-    lambda x: 'BERPELUANG'
-    if x >= 620
-    else 'KURANG_BERPELUANG'
-)
 
 # Fitur dan Target
 features = ['PU', 'PPU', 'PBM', 'PK', 'LBI', 'LBI2', 'PM']
@@ -44,9 +23,9 @@ scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
-# Inisialisasi dan Train Model KNN (K=7, matching original model settings)
-print("Training KNN Model (K=7)...")
-model = KNeighborsClassifier(n_neighbors=7, metric='minkowski')
+# Inisialisasi dan Train Model KNN (Tuned: K=25, metric='euclidean', weights='distance')
+print("Training KNN Model (K=25, metric='euclidean', weights='distance')...")
+model = KNeighborsClassifier(n_neighbors=25, metric='euclidean', weights='distance')
 model.fit(X_train_scaled, y_train)
 
 # Prediksi untuk Evaluasi
@@ -57,6 +36,7 @@ print("\n=== EVALUASI MODEL KNN ===")
 print(f"Accuracy:  {accuracy_score(y_test, y_pred) * 100:.2f}%")
 print(f"Precision: {precision_score(y_test, y_pred, pos_label='BERPELUANG') * 100:.2f}%")
 print(f"Recall:    {recall_score(y_test, y_pred, pos_label='BERPELUANG') * 100:.2f}%")
+print(f"F1-Score:  {f1_score(y_test, y_pred, pos_label='BERPELUANG') * 100:.2f}%")
 print("\nClassification Report:")
 print(classification_report(y_test, y_pred))
 

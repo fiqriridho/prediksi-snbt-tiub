@@ -62,7 +62,6 @@ with col_left:
     if st.button("Prediksi Peluang Kelolosan", use_container_width=True, type="primary"):
         data = np.array([[PU, PPU, PBM, PK, LBI, LBI2, PM]])
         rata_rata = np.mean(data)
-        rata_rata_bobot = (PU * 1.0 + PPU * 1.0 + PBM * 1.0 + PK * 1.2 + LBI * 0.9 + LBI2 * 0.9 + PM * 1.3) / 7.3
         
         # normalisasi
         data_scaled = scaler.transform(data)
@@ -80,7 +79,6 @@ with col_left:
             "LBI2": LBI2,
             "PM": PM,
             "rata_rata": rata_rata,
-            "rata_rata_bobot": rata_rata_bobot,
             "hasil": prediction[0],
             "keyakinan": float(np.max(probability) * 100)
         }
@@ -93,16 +91,11 @@ with col_left:
         st.subheader("📊 Hasil Analisis Prediksi")
         
         # Menggunakan kolom metrik untuk informasi yang lebih visual & ringkas
-        m_col1, m_col2, m_col3 = st.columns(3)
-        m_col1.metric(label="Rata-rata", value=f"{res['rata_rata']:.2f}")
-        m_col2.metric(
-            label="Weighted Score", 
-            value=f"{res['rata_rata_bobot']:.2f}",
-            delta=f"{res['rata_rata_bobot'] - 620:.2f} vs Threshold (620)"
-        )
-        m_col3.metric(label="Keyakinan Model", value=f"{res['keyakinan']:.2f}%")
+        m_col1, m_col2 = st.columns(2)
+        m_col1.metric(label="Rata-rata Nilai", value=f"{res['rata_rata']:.2f}")
+        m_col2.metric(label="Keyakinan Model", value=f"{res['keyakinan']:.2f}%")
         
-        st.caption("Weighted score 620 digunakan sebagai indikator pembanding, sedangkan keputusan utama ditentukan oleh model KNN.")
+        st.caption("Rata-rata nilai 620 digunakan sebagai indikator pembanding, sedangkan keputusan kelolosan utama ditentukan oleh model KNN.")
 
         if res["hasil"] == "BERPELUANG":
             st.success("🎉 Berpeluang Lolos SNBT Teknik Informatika UB")
@@ -149,15 +142,14 @@ with col_left:
         subtes_terlemah_str = ", ".join(subtes_terlemah_list)
         
         # Metrik utama
-        a_col1, a_col2, a_col3 = st.columns(3)
+        a_col1, a_col2 = st.columns(2)
         a_col1.metric("Rata-rata Nilai", f"{res['rata_rata']:.2f}")
-        a_col2.metric("Weighted Score", f"{res['rata_rata_bobot']:.2f}")
         
-        selisih = 620 - res['rata_rata_bobot']
+        selisih = 620 - res['rata_rata']
         if selisih > 0:
-            a_col3.metric("Selisih ke Target (620)", f"{selisih:.2f} poin", delta=f"-{selisih:.2f}")
+            a_col2.metric("Selisih ke Target (620)", f"{selisih:.2f} poin", delta=f"-{selisih:.2f}")
         else:
-            a_col3.metric("Selisih ke Target (620)", f"{abs(selisih):.2f} poin (Lolos)", delta=f"+{abs(selisih):.2f}")
+            a_col2.metric("Selisih ke Target (620)", f"{abs(selisih):.2f} poin (Lolos)", delta=f"+{abs(selisih):.2f}")
             
         
         # Tampilan kekuatan & kelemahan
@@ -170,20 +162,20 @@ with col_left:
             f"Kelemahan utama berada pada **{subtes_terlemah_str}**."
         ]
         if selisih > 0:
-            summary_lines.append(f"Weighted score masih berada **{selisih:.2f}** poin di bawah target 620.")
+            summary_lines.append(f"Rata-rata nilai masih berada **{selisih:.2f}** poin di bawah target 620.")
         else:
-            summary_lines.append(f"Weighted score sudah berada **{abs(selisih):.2f}** poin di atas target 620.")
+            summary_lines.append(f"Rata-rata nilai sudah berada **{abs(selisih):.2f}** poin di atas target 620.")
 
         if res["hasil"] == "BERPELUANG":
             if selisih > 0:
-                st.info(f"💡 Meskipun weighted score belum mencapai 620, model KNN memprediksi Anda **BERPELUANG** lolos.")
+                st.info(f"💡 Meskipun rata-rata nilai belum mencapai 620, model KNN memprediksi Anda **BERPELUANG** lolos.")
             else:
-                st.success(f"🎉 Anda sudah melampaui target weighted score 620 sebesar {abs(selisih):.2f} poin.")
+                st.success(f"🎉 Rata-rata nilai Anda sudah melampaui target 620 sebesar {abs(selisih):.2f} poin.")
         else:
             if selisih > 0:
-                st.error(f"🎯 Anda masih membutuhkan {selisih:.2f} poin untuk mencapai target weighted score 620.")
+                st.error(f"🎯 Anda masih membutuhkan {selisih:.2f} poin untuk mencapai target 620.")
             else:
-                st.warning(f"⚠️ Weighted score Anda sudah melampaui 620, namun model KNN memprediksi Anda **KURANG BERPELUANG** lolos.")
+                st.warning(f"⚠️ Rata-rata nilai Anda sudah melampaui 620, namun model KNN memprediksi Anda **KURANG BERPELUANG** lolos.")
 
         summary_lines.append(f"Prioritas utama peningkatan adalah {subtes_terlemah_str} karena memiliki skor terendah.")        
         summary_markdown = "\n".join([f"- {line}" for line in summary_lines])
@@ -244,7 +236,7 @@ with col_right:
                 [k for k, v in scores.items() if v == nilai_min]
             )
 
-            selisih_target = 620 - data["rata_rata_bobot"]
+            selisih_target = 620 - data["rata_rata"]
 
             context = f"""
             Data peserta:
@@ -260,8 +252,8 @@ with col_right:
             Hasil Prediksi:
             {hasil_formatted}
 
-            Weighted Score:
-            {data['rata_rata_bobot']:.2f}
+            Rata-rata Nilai:
+            {data['rata_rata']:.2f}
 
             Subtes Terkuat:
             {subtes_terkuat}
@@ -269,7 +261,7 @@ with col_right:
             Subtes Terlemah:
             {subtes_terlemah}
 
-            Selisih ke Target 620:
+            Selisih ke Target Rata-rata 620:
             {selisih_target:.2f}
 
             Kamu adalah konsultan UTBK.
